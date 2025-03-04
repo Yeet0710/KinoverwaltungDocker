@@ -1,0 +1,102 @@
+
+
+services:
+  frontend:
+    image: yeeterich/kino-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - kino-net
+    command: npm start
+
+  backend:
+    image: yeeterich/kino-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - mongo
+      - rabbitmq
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/kinodb
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: fhdw
+      # SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/kinodb
+    networks:
+      - kino-net
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: kinodb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: fhdw
+    ports:
+      - "5432:5432"
+    networks:
+      - kino-net
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@kino.de
+      PGADMIN_DEFAULT_PASSWORD: fhdw
+    networks:
+      - kino-net
+
+  mongo:
+    image: mongo:6
+    container_name: mongo-db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: fhdw
+    command: mongod --auth
+    ports:
+      - "27017:27017"
+    networks:
+      - kino-net
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+      image: mongo-express
+      container_name: mongo-express
+      restart: always
+      ports:
+        - "8081:8081"
+      environment:
+        ME_CONFIG_MONGODB_AUTH_USERNAME: "admin"
+        ME_CONFIG_MONGODB_AUTH_PASSWORD: "fhdw"
+        ME_CONFIG_MONGODB_URL: "mongodb://admin:fhdw@mongo-db:27017/"
+      networks:
+        - kino-net
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # AMQP Port
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - kino-net
+
+networks:
+  kino-net:
+
+volumes:
+  postgres-data:
+  mongo-data:
